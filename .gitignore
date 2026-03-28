@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (large files)
+data/raw/ml-100k/
+data/raw/ml-1m/
+data/processed/
+
+# Results (regeneratable)
+results/models/
+results/experiments/
+results/figures/
+results/*.json
+results/*.csv
