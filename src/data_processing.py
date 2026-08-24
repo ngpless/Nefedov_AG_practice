@@ -478,11 +478,12 @@ class RecommenderDataProcessor:
         # Маппинги
         df = self.create_mappings(df)
 
-        # User-item матрица
-        user_item_matrix = self.create_user_item_matrix(df)
-
-        # Разделение
+        # Разделение (до построения матрицы, чтобы тестовые рейтинги
+        # не попадали в обучающие структуры данных)
         train_data, test_data = self.split_data(df, test_size)
+
+        # User-item матрица строится ТОЛЬКО по обучающей выборке
+        user_item_matrix = self.create_user_item_matrix(train_data)
 
         # Добавляем информацию в dataset_info
         dataset_info['n_users_mapped'] = len(self.user_mapping)
