@@ -40,3 +40,6 @@ results/*.csv
 
 # Временная модель GUI-демонстрации
 model_gui.pt
+
+# Кэш pytest
+.pytest_cache/
