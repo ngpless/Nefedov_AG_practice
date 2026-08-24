@@ -18,6 +18,8 @@ from scipy.sparse import csr_matrix
 from scipy.optimize import minimize
 import time
 
+from config import RANDOM_SEED, VALIDATION_SIZE
+
 
 class RecommenderEnsembleTrainer:
     def __init__(self):
@@ -148,7 +150,7 @@ class RecommenderEnsembleTrainer:
 
         n_models = 5
         predictions_list = []
-        rng = np.random.RandomState(42)
+        rng = np.random.RandomState(RANDOM_SEED)
 
         for i in range(n_models):
             sample_indices = rng.choice(len(train_data), size=len(train_data), replace=True)
@@ -310,7 +312,7 @@ class RecommenderEnsembleTrainer:
 
         # Honest-схема для мета-моделей: train -> core + validation
         train_core, val_data = train_test_split(
-            train_data, test_size=0.15, random_state=42,
+            train_data, test_size=VALIDATION_SIZE, random_state=RANDOM_SEED,
             stratify=train_data['rating']
         )
         val_preds, test_preds_core, val_rmse = self._build_holdout_predictions(
