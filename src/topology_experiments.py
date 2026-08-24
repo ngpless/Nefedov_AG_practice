@@ -55,8 +55,9 @@ class TopologyExperiments:
             results_dir: директория для сохранения результатов
         """
         # Воспроизводимость экспериментов с топологией
-        torch.manual_seed(42)
-        np.random.seed(42)
+        from config import RANDOM_SEED
+        torch.manual_seed(RANDOM_SEED)
+        np.random.seed(RANDOM_SEED)
         self.n_users = n_users
         self.n_items = n_items
 
