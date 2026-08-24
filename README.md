@@ -20,12 +20,15 @@
 
 ```
 Nefedov_AG/
-├── main.py                      # Главный скрипт
+├── main.py                      # Консольный сценарий эксперимента
+├── gui.py                       # Графический интерфейс (tkinter)
+├── model.pt, model1..4.pt       # Веса демонстрируемых моделей
 ├── requirements.txt             # Зависимости
+├── requirements-dev.txt         # Зависимости разработки (pytest)
 ├── README.md                    # Документация
 │
 ├── src/                         # Исходный код
-│   ├── __init__.py
+│   ├── config.py                # Общая конфигурация (seed, доли выборок)
 │   ├── data_processing.py       # Загрузка и обработка данных
 │   ├── models.py                # Классические модели
 │   ├── neural_models.py         # Нейросетевые модели (PyTorch)
@@ -33,6 +36,9 @@ Nefedov_AG/
 │   ├── topology_experiments.py  # Эксперименты с топологией
 │   ├── visualization.py         # Визуализация
 │   └── utils.py                 # Утилиты и метрики
+│
+├── tests/                       # Модульные тесты (pytest)
+├── docs/                        # Архитектура, воспроизводимость
 │
 ├── data/                        # Данные
 │   ├── raw/                     # Сырые данные (MovieLens)
@@ -43,7 +49,7 @@ Nefedov_AG/
 │
 └── results/                     # Результаты
     ├── figures/                 # Графики
-    ├── models/                  # Сохранённые модели
+    ├── models/                  # Сохранённые модели (*.pt)
     └── experiments/             # Результаты экспериментов
 ```
 
