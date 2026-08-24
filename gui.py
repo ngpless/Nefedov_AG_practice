@@ -102,6 +102,11 @@ class RecommenderApp:
                                 style="Status.TLabel", relief="sunken", anchor="w")
         self.status.pack(fill="x", side="bottom")
 
+        # горячие клавиши
+        self.root.bind("<F1>", lambda e: self._show_about())
+        self.root.bind("<F5>", lambda e: self.load_movielens())
+        self.root.bind("<Control-s>", lambda e: self.export_recommendations())
+
     def _build_tab_data(self):
         f = self.tab_data
         ttk.Label(f, text="Загрузка и анализ данных", style="Header.TLabel").pack(
