@@ -168,6 +168,8 @@ class RecommenderApp:
                     textvariable=self.topn_var).pack(side="left", padx=8)
         ttk.Button(row, text="Сформировать рекомендации",
                    command=self.recommend).pack(side="left", padx=16)
+        ttk.Button(row, text="Сохранить в CSV…",
+                   command=self.export_recommendations).pack(side="left")
 
         cols = ("n", "film", "year", "score")
         self.rec_tree = ttk.Treeview(f, columns=cols, show="headings", height=15)
@@ -434,6 +436,27 @@ class RecommenderApp:
                 rank, name, year, f"{min(5.0, float(scores[j])):.2f}"))
         self.status.configure(
             text=f"Сформировано {len(order)} рекомендаций для пользователя {user_id}.")
+
+    def export_recommendations(self):
+        """Выгрузка сформированного списка рекомендаций в CSV-файл."""
+        rows = self.rec_tree.get_children()
+        if not rows:
+            messagebox.showwarning("Нет данных",
+                                   "Сначала сформируйте рекомендации.")
+            return
+        path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            initialfile=f"recommendations_user{self.user_var.get()}.csv",
+            filetypes=[("CSV", "*.csv")])
+        if not path:
+            return
+        import csv
+        with open(path, "w", newline="", encoding="utf-8-sig") as fh:
+            writer = csv.writer(fh, delimiter=";")
+            writer.writerow(["№", "Рекомендуемый фильм", "Год", "Прогноз оценки"])
+            for row_id in rows:
+                writer.writerow(self.rec_tree.item(row_id)["values"])
+        self.status.configure(text=f"Рекомендации сохранены: {path}")
 
     # ------------------------------------------------------------- оценка
     def evaluate(self):
