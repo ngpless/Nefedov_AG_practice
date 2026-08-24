@@ -37,3 +37,6 @@ results/experiments/
 results/figures/
 results/*.json
 results/*.csv
+
+# Временная модель GUI-демонстрации
+model_gui.pt
