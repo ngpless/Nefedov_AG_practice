@@ -674,15 +674,39 @@ class NeuralModelTrainer:
 
         return train_loader, test_loader
 
-    def train_model(self, model, train_loader, test_loader, epochs=50, lr=0.001,
+    def create_train_val_test_loaders(self, train_data, test_data, batch_size=256,
+                                      val_ratio=0.15):
+        """
+        Разбивает обучающую выборку на core/validation и создаёт три DataLoader.
+        Валидация используется для early stopping и подбора числа эпох —
+        тестовая выборка в обучении не участвует.
+        """
+        from sklearn.model_selection import train_test_split as _tts
+
+        train_core, val_data = _tts(train_data, test_size=val_ratio,
+                                    random_state=42,
+                                    stratify=train_data['rating'])
+
+        train_loader, val_loader = self.create_data_loaders(train_core, val_data, batch_size)
+        _, test_loader = self.create_data_loaders(train_core, test_data, batch_size)
+
+        return train_loader, val_loader, test_loader
+
+    def train_model(self, model, train_loader, val_loader, test_loader,
+                    epochs=50, lr=0.001,
                     weight_decay=1e-5, patience=10, min_delta=0.001):
         """
-        Обучение модели с early stopping
+        Обучение модели с early stopping.
+
+        Early stopping и scheduler работают по ВАЛИДАЦИОННОЙ выборке
+        (отделённой от train); тестовая выборка используется один раз —
+        для итоговой оценки качества.
 
         Args:
             model: модель PyTorch
             train_loader: DataLoader для обучения
-            test_loader: DataLoader для тестирования
+            val_loader: DataLoader валидации (мониторинг early stopping)
+            test_loader: DataLoader для итоговой оценки
             epochs: максимальное число эпох
             lr: скорость обучения
             weight_decay: коэффициент L2 регуляризации
@@ -701,13 +725,13 @@ class NeuralModelTrainer:
 
         history = {
             'train_loss': [],
-            'test_loss': [],
+            'val_loss': [],
             'train_rmse': [],
-            'test_rmse': [],
+            'val_rmse': [],
             'epochs_trained': 0
         }
 
-        best_test_loss = float('inf')
+        best_val_loss = float('inf')
         best_model_state = None
         patience_counter = 0
 
@@ -734,43 +758,43 @@ class NeuralModelTrainer:
                 optimizer.step()
                 train_losses.append(loss.item())
 
-            # Оценка на тестовой выборке
+            # Оценка на валидационной выборке
             model.eval()
-            test_losses = []
+            val_losses = []
             all_predictions = []
             all_targets = []
 
             with torch.no_grad():
-                for user_ids, item_ids, ratings in test_loader:
+                for user_ids, item_ids, ratings in val_loader:
                     user_ids = user_ids.to(self.device)
                     item_ids = item_ids.to(self.device)
                     ratings = ratings.to(self.device)
 
                     predictions = model(user_ids, item_ids)
                     loss = criterion(predictions, ratings)
-                    test_losses.append(loss.item())
+                    val_losses.append(loss.item())
 
                     all_predictions.extend(predictions.cpu().numpy())
                     all_targets.extend(ratings.cpu().numpy())
 
             # Метрики
             train_loss = np.mean(train_losses)
-            test_loss = np.mean(test_losses)
+            val_loss = np.mean(val_losses)
             train_rmse = np.sqrt(train_loss)
-            test_rmse = np.sqrt(mean_squared_error(all_targets, all_predictions))
+            val_rmse = np.sqrt(mean_squared_error(all_targets, all_predictions))
 
             history['train_loss'].append(train_loss)
-            history['test_loss'].append(test_loss)
+            history['val_loss'].append(val_loss)
             history['train_rmse'].append(train_rmse)
-            history['test_rmse'].append(test_rmse)
+            history['val_rmse'].append(val_rmse)
             history['epochs_trained'] = epoch + 1
 
             # Learning rate scheduler
-            scheduler.step(test_loss)
+            scheduler.step(val_loss)
 
             # Early stopping
-            if test_loss < best_test_loss - min_delta:
-                best_test_loss = test_loss
+            if val_loss < best_val_loss - min_delta:
+                best_val_loss = val_loss
                 best_model_state = model.state_dict().copy()
                 patience_counter = 0
             else:
@@ -778,7 +802,7 @@ class NeuralModelTrainer:
 
             if (epoch + 1) % 10 == 0:
                 print(f"  Эпоха {epoch+1}/{epochs}: "
-                      f"Train RMSE={train_rmse:.4f}, Test RMSE={test_rmse:.4f}")
+                      f"Train RMSE={train_rmse:.4f}, Val RMSE={val_rmse:.4f}")
 
             if patience_counter >= patience:
                 print(f"  Early stopping на эпохе {epoch+1}")
@@ -821,8 +845,9 @@ class NeuralModelTrainer:
         model = GMF(n_users, n_items, embed_dim)
         print(f"  Параметров: {model.count_parameters():,}")
 
-        train_loader, test_loader = self.create_data_loaders(train_data, test_data, batch_size)
-        history = self.train_model(model, train_loader, test_loader, epochs, lr)
+        train_loader, val_loader, test_loader = self.create_train_val_test_loaders(
+            train_data, test_data, batch_size)
+        history = self.train_model(model, train_loader, val_loader, test_loader, epochs, lr)
 
         result = {
             'name': 'GMF',
@@ -852,8 +877,9 @@ class NeuralModelTrainer:
         print(f"  Параметров: {model.count_parameters():,}")
         print(f"  Архитектура: {hidden_layers}")
 
-        train_loader, test_loader = self.create_data_loaders(train_data, test_data, batch_size)
-        history = self.train_model(model, train_loader, test_loader, epochs, lr)
+        train_loader, val_loader, test_loader = self.create_train_val_test_loaders(
+            train_data, test_data, batch_size)
+        history = self.train_model(model, train_loader, val_loader, test_loader, epochs, lr)
 
         result = {
             'name': 'MLP Recommender',
@@ -884,8 +910,9 @@ class NeuralModelTrainer:
                                               mlp_embed_dim, mlp_hidden_layers)
         print(f"  Параметров: {model.count_parameters():,}")
 
-        train_loader, test_loader = self.create_data_loaders(train_data, test_data, batch_size)
-        history = self.train_model(model, train_loader, test_loader, epochs, lr)
+        train_loader, val_loader, test_loader = self.create_train_val_test_loaders(
+            train_data, test_data, batch_size)
+        history = self.train_model(model, train_loader, val_loader, test_loader, epochs, lr)
 
         result = {
             'name': 'Neural Collaborative Filtering',
@@ -914,8 +941,9 @@ class NeuralModelTrainer:
         model = WideAndDeep(n_users, n_items, embed_dim, deep_layers)
         print(f"  Параметров: {model.count_parameters():,}")
 
-        train_loader, test_loader = self.create_data_loaders(train_data, test_data, batch_size)
-        history = self.train_model(model, train_loader, test_loader, epochs, lr)
+        train_loader, val_loader, test_loader = self.create_train_val_test_loaders(
+            train_data, test_data, batch_size)
+        history = self.train_model(model, train_loader, val_loader, test_loader, epochs, lr)
 
         result = {
             'name': 'Wide & Deep',

@@ -383,7 +383,7 @@ class RecommenderVisualizer:
         Визуализация истории обучения нейросети
 
         Args:
-            history: словарь с историей (train_loss, test_loss, train_rmse, test_rmse)
+            history: словарь с историей (train_loss, val_loss, train_rmse, val_rmse)
             model_name: название модели
         """
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -393,7 +393,7 @@ class RecommenderVisualizer:
         # Loss
         ax = axes[0]
         ax.plot(epochs, history['train_loss'], 'b-', label='Train Loss', linewidth=2)
-        ax.plot(epochs, history['test_loss'], 'r-', label='Test Loss', linewidth=2)
+        ax.plot(epochs, history['val_loss'], 'r-', label='Validation Loss', linewidth=2)
         ax.set_xlabel('Эпоха')
         ax.set_ylabel('Loss (MSE)')
         ax.set_title(f'{model_name}: История Loss')
@@ -403,7 +403,7 @@ class RecommenderVisualizer:
         # RMSE
         ax = axes[1]
         ax.plot(epochs, history['train_rmse'], 'b-', label='Train RMSE', linewidth=2)
-        ax.plot(epochs, history['test_rmse'], 'r-', label='Test RMSE', linewidth=2)
+        ax.plot(epochs, history['val_rmse'], 'r-', label='Validation RMSE', linewidth=2)
         ax.set_xlabel('Эпоха')
         ax.set_ylabel('RMSE')
         ax.set_title(f'{model_name}: История RMSE')
