@@ -49,9 +49,14 @@ except ImportError:
     print("Установите: pip install torch")
 
 
-def main():
+def main(epochs=50, batch_size=256, skip_topology=False):
     """
     Главная функция - полный пайплайн рекомендательной системы
+
+    Args:
+        epochs: максимальное число эпох обучения нейросетей
+        batch_size: размер мини-батча
+        skip_topology: пропустить эксперименты с топологией (быстрее)
     """
     print("="*70)
     print("РЕКОМЕНДАТЕЛЬНАЯ СИСТЕМА С НЕЙРОННЫМИ СЕТЯМИ")
@@ -158,8 +163,8 @@ def main():
             neural_trainer = NeuralModelTrainer()
             neural_results = neural_trainer.train_all_neural_models(
                 train_data, test_data, n_users, n_items,
-                epochs=50,
-                batch_size=256
+                epochs=epochs,
+                batch_size=batch_size
             )
 
             # Визуализация истории обучения для каждой модели
@@ -200,7 +205,7 @@ def main():
         # =====================================================================
         # ЭТАП 7: ЭКСПЕРИМЕНТЫ С ТОПОЛОГИЕЙ
         # =====================================================================
-        if PYTORCH_AVAILABLE:
+        if PYTORCH_AVAILABLE and not skip_topology:
             print("\n" + "="*70)
             print("ЭТАП 7: ЭКСПЕРИМЕНТЫ С ТОПОЛОГИЕЙ НЕЙРОСЕТЕЙ")
             print("="*70)
@@ -341,13 +346,20 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Рекомендательная система с нейронными сетями')
     parser.add_argument('--quick', action='store_true', help='Быстрый тест на синтетических данных')
+    parser.add_argument('--epochs', type=int, default=50,
+                        help='Максимальное число эпох обучения нейросетей (по умолчанию 50)')
+    parser.add_argument('--batch-size', type=int, default=256,
+                        help='Размер мини-батча (по умолчанию 256)')
+    parser.add_argument('--skip-topology', action='store_true',
+                        help='Пропустить эксперименты с топологией (ускоряет запуск)')
 
     args = parser.parse_args()
 
     if args.quick:
         run_quick_test()
     else:
-        success = main()
+        success = main(epochs=args.epochs, batch_size=args.batch_size,
+                       skip_topology=args.skip_topology)
         if success:
             print("\n" + "="*70)
             print("Эксперимент завершён, результаты воспроизводимы.")
