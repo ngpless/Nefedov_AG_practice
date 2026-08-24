@@ -26,6 +26,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 import numpy as np
 import torch
 
+from config import RATING_MIN, RATING_MAX
 from data_processing import RecommenderDataProcessor
 from neural_models import GMF, MLP_Recommender, NeuralCollaborativeFiltering, \
     WideAndDeep, NeuralModelTrainer
@@ -463,7 +464,7 @@ class RecommenderApp:
             year = title[-5:-1] if title.endswith(")") else "—"
             name = title[:-7] if title.endswith(")") else title
             self.rec_tree.insert("", "end", values=(
-                rank, name, year, f"{min(5.0, float(scores[j])):.2f}"))
+                rank, name, year, f"{min(float(RATING_MAX), float(scores[j])):.2f}"))
         self.status.configure(
             text=f"Сформировано {len(order)} рекомендаций для пользователя {user_id}.")
 
@@ -500,7 +501,7 @@ class RecommenderApp:
             preds = []
             for k in range(0, len(u), 4096):
                 preds.append(self.model(u[k:k + 4096], i[k:k + 4096]).numpy())
-        preds = np.clip(np.concatenate(preds), 1, 5)
+        preds = np.clip(np.concatenate(preds), RATING_MIN, RATING_MAX)
         y = self.test_data["rating"].values
         rmse = float(np.sqrt(np.mean((y - preds) ** 2)))
         mae = float(np.mean(np.abs(y - preds)))
