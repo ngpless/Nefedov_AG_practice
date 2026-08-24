@@ -21,6 +21,8 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from tqdm import tqdm
 import time
+
+from config import RANDOM_SEED, VALIDATION_SIZE, EARLY_STOPPING_PATIENCE
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -642,8 +644,8 @@ class NeuralModelTrainer:
 
         # Фиксация генераторов случайных чисел: инициализация весов и
         # порядок батчей воспроизводимы между запусками
-        torch.manual_seed(42)
-        np.random.seed(42)
+        torch.manual_seed(RANDOM_SEED)
+        np.random.seed(RANDOM_SEED)
 
         print(f"Используется устройство: {self.device}")
 
@@ -680,7 +682,7 @@ class NeuralModelTrainer:
         return train_loader, test_loader
 
     def create_train_val_test_loaders(self, train_data, test_data, batch_size=256,
-                                      val_ratio=0.15):
+                                      val_ratio=VALIDATION_SIZE):
         """
         Разбивает обучающую выборку на core/validation и создаёт три DataLoader.
         Валидация используется для early stopping и подбора числа эпох —
@@ -689,7 +691,7 @@ class NeuralModelTrainer:
         from sklearn.model_selection import train_test_split as _tts
 
         train_core, val_data = _tts(train_data, test_size=val_ratio,
-                                    random_state=42,
+                                    random_state=RANDOM_SEED,
                                     stratify=train_data['rating'])
 
         train_loader, val_loader = self.create_data_loaders(train_core, val_data, batch_size)
@@ -699,7 +701,7 @@ class NeuralModelTrainer:
 
     def train_model(self, model, train_loader, val_loader, test_loader,
                     epochs=50, lr=0.001,
-                    weight_decay=1e-5, patience=10, min_delta=0.001):
+                    weight_decay=1e-5, patience=EARLY_STOPPING_PATIENCE, min_delta=0.001):
         """
         Обучение модели с early stopping.
 
