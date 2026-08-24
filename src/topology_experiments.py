@@ -54,6 +54,9 @@ class TopologyExperiments:
             device: устройство для вычислений
             results_dir: директория для сохранения результатов
         """
+        # Воспроизводимость экспериментов с топологией
+        torch.manual_seed(42)
+        np.random.seed(42)
         self.n_users = n_users
         self.n_items = n_items
 

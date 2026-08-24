@@ -640,6 +640,11 @@ class NeuralModelTrainer:
         else:
             self.device = torch.device(device)
 
+        # Фиксация генераторов случайных чисел: инициализация весов и
+        # порядок батчей воспроизводимы между запусками
+        torch.manual_seed(42)
+        np.random.seed(42)
+
         print(f"Используется устройство: {self.device}")
 
         self.trained_models = {}
