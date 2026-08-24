@@ -119,7 +119,8 @@ def main():
 
         ensemble_trainer = RecommenderEnsembleTrainer()
         ensemble_results = ensemble_trainer.train_ensemble_models(
-            train_data, test_data, user_item_matrix, model_trainer.trained_models
+            train_data, test_data, user_item_matrix, model_trainer.trained_models,
+            n_users, n_items
         )
 
         print(f"\nОбучено {len(ensemble_results)} ансамблевых моделей")
@@ -135,11 +136,9 @@ def main():
             train_data, test_data, user_item_matrix
         )
 
-        # Оптимизация весов ансамбля
-        model_predictions = {name: model['predictions'] for name, model in model_trainer.trained_models.items()}
-        optimized_weights_result = ensemble_trainer.optimize_ensemble_weights(
-            train_data, test_data, model_predictions, model_trainer.trained_models
-        )
+        # Оптимизация весов ансамбля (веса подбираются по валидации,
+        # оценка — на тесте; контекст подготовлен в train_ensemble_models)
+        optimized_weights_result = ensemble_trainer.optimize_ensemble_weights(test_data)
         optimized_results['Optimized Ensemble Weights'] = optimized_weights_result
 
         print(f"\nОптимизировано {len(optimized_results)} моделей")
@@ -168,6 +167,22 @@ def main():
                 if 'history' in result:
                     visualizer.plot_training_history(result['history'], name)
 
+            # Сохранение весов обученных моделей (требование программы ГИА:
+            # модель должна загружаться из файла и воспроизводить метрики)
+            os.makedirs(os.path.join('results', 'models'), exist_ok=True)
+            for name, result in neural_results.items():
+                if 'model' in result:
+                    safe_name = name.replace(' ', '_').replace('&', 'and')
+                    weights_path = os.path.join('results', 'models', f'{safe_name}.pt')
+                    torch.save(result['model'].state_dict(), weights_path)
+                    print(f"  Веса сохранены: {weights_path}")
+
+            # Лучшая нейросетевая модель дублируется в корень как model.pt
+            best_neural_name = min(neural_results.items(), key=lambda x: x[1]['rmse'])[0]
+            best_neural_model = neural_results[best_neural_name]['model']
+            torch.save(best_neural_model.state_dict(), 'model.pt')
+            print(f"  Лучшая нейросетевая модель ({best_neural_name}) сохранена: model.pt")
+
             print(f"\nОбучено {len(neural_results)} нейросетевых моделей")
 
         else:
@@ -184,10 +199,18 @@ def main():
             print("="*70)
 
             from topology_experiments import TopologyExperiments
+            from sklearn.model_selection import train_test_split
+
+            # Архитектура выбирается по ВАЛИДАЦИОННОЙ выборке (из train),
+            # тест в выборе конфигурации не участвует
+            topo_train, topo_val = train_test_split(
+                train_data, test_size=0.15, random_state=42,
+                stratify=train_data['rating']
+            )
 
             topology_exp = TopologyExperiments(n_users, n_items)
             topology_results = topology_exp.run_all_experiments(
-                train_data, test_data,
+                topo_train, topo_val,
                 epochs=30,
                 batch_size=256
             )
