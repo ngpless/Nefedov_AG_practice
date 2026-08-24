@@ -410,7 +410,7 @@ class RecommenderDataProcessor:
 
         return user_item_matrix
 
-    def split_data(self, df, test_size=0.2, random_state=42, stratify=True):
+    def split_data(self, df, test_size=None, random_state=None, stratify=True):
         """
         Разделение данных на обучающую и тестовую выборки
 
@@ -423,6 +423,11 @@ class RecommenderDataProcessor:
         Returns:
             train_data, test_data - два DataFrame
         """
+        from config import TEST_SIZE, RANDOM_SEED
+        if test_size is None:
+            test_size = TEST_SIZE
+        if random_state is None:
+            random_state = RANDOM_SEED
         print(f"\nРазделение данных (test_size={test_size})...")
 
         if stratify:
