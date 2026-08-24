@@ -1,0 +1,25 @@
+name: tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies (CPU)
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy scikit-learn scipy matplotlib seaborn requests pytest
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Run test suite
+        run: python -m pytest
