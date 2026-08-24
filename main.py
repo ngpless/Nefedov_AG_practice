@@ -55,7 +55,7 @@ def main():
     """
     print("="*70)
     print("РЕКОМЕНДАТЕЛЬНАЯ СИСТЕМА С НЕЙРОННЫМИ СЕТЯМИ")
-    print("Производственная практика - Эксплуатационная практика")
+    print("Выпускная квалификационная работа")
     print("Нефедов Алексей Геннадьевич")
     print("="*70)
 
@@ -177,8 +177,15 @@ def main():
                     torch.save(result['model'].state_dict(), weights_path)
                     print(f"  Веса сохранены: {weights_path}")
 
+            # Демонстрируемые модели нумеруются по качеству: model1.pt — лучшая
+            # (требование программы ГИА к именованию файлов моделей)
+            ranked = sorted(neural_results.items(), key=lambda x: x[1]['rmse'])
+            for rank, (name, result) in enumerate(ranked, 1):
+                torch.save(result['model'].state_dict(), f'model{rank}.pt')
+                print(f"  model{rank}.pt <- {name} (RMSE {result['rmse']:.4f})")
+
             # Лучшая нейросетевая модель дублируется в корень как model.pt
-            best_neural_name = min(neural_results.items(), key=lambda x: x[1]['rmse'])[0]
+            best_neural_name = ranked[0][0]
             best_neural_model = neural_results[best_neural_name]['model']
             torch.save(best_neural_model.state_dict(), 'model.pt')
             print(f"  Лучшая нейросетевая модель ({best_neural_name}) сохранена: model.pt")
@@ -343,7 +350,7 @@ if __name__ == "__main__":
         success = main()
         if success:
             print("\n" + "="*70)
-            print("Система готова для защиты практики!")
+            print("Эксперимент завершён, результаты воспроизводимы.")
             print("Откройте notebooks/report.ipynb для детального отчёта")
             print("="*70)
         else:
