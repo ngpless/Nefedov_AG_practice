@@ -71,6 +71,12 @@ class RecommenderApp:
         style.configure("Header.TLabel", font=("Segoe UI", 13, "bold"))
         style.configure("Status.TLabel", font=("Segoe UI", 10))
 
+        menubar = tk.Menu(self.root)
+        help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu.add_command(label="О программе", command=self._show_about)
+        menubar.add_cascade(label="Справка", menu=help_menu)
+        self.root.config(menu=menubar)
+
         self.nb = ttk.Notebook(self.root)
         self.nb.pack(fill="both", expand=True, padx=8, pady=8)
 
@@ -134,6 +140,8 @@ class RecommenderApp:
         self.btn_train.pack(side="left")
         self.progress = ttk.Progressbar(row2, length=320, mode="determinate")
         self.progress.pack(side="left", padx=16)
+        ttk.Button(row2, text="Очистить журнал",
+                   command=self.clear_train_log).pack(side="left")
 
         self.train_log = tk.Text(f, height=16, width=100, font=("Consolas", 10),
                                  state="disabled", bg="#1e1e1e", fg="#d4d4d4")
@@ -194,12 +202,29 @@ class RecommenderApp:
                                  state="disabled", bg="#f8f8f8")
         self.eval_info.pack(fill="both", expand=True, padx=16, pady=12)
 
+    def _show_about(self):
+        messagebox.showinfo(
+            "О программе",
+            "Интеллектуальный сервис рекомендации товаров и услуг\n\n"
+            "Выпускная квалификационная работа\n"
+            "Нефедов Алексей Геннадьевич\n"
+            "МУИВ им. С.Ю. Витте, 09.03.03 Прикладная информатика\n\n"
+            "Архитектуры: GMF, MLP, NCF, Wide & Deep (PyTorch)\n"
+            "Репозиторий: github.com/ngpless/Nefedov_AG_practice")
+
     # ------------------------------------------------------------- утилиты
     def _set_text(self, widget, text):
         widget.configure(state="normal")
         widget.delete("1.0", "end")
         widget.insert("1.0", text)
         widget.configure(state="disabled")
+
+    def clear_train_log(self):
+        """Очистка журнала обучения и сброс индикатора прогресса."""
+        self.train_log.configure(state="normal")
+        self.train_log.delete("1.0", "end")
+        self.train_log.configure(state="disabled")
+        self.progress.configure(value=0)
 
     def _append_log(self, text):
         self.log_queue.put(("log", text))
